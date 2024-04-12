@@ -249,6 +249,7 @@ internal class Consumer : IConsumer
                     _partitionsRevokedHandlers.ForEach(handler => handler(_dependencyResolver, consumer, partitions));
                 })
             .SetErrorHandler((consumer, error) => _errorsHandlers.ForEach(x => x(consumer, error)))
+            .SetLogHandler((consumer, log) => _logHandler.Info($"Consumer {log.Level}", log))
             .SetStatisticsHandler((consumer, statistics) => _statisticsHandlers.ForEach(x => x(consumer, statistics)));
 
         var security = this.Configuration.ClusterConfiguration.GetSecurityInformation();

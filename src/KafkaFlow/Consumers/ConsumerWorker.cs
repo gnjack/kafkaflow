@@ -72,24 +72,29 @@ internal class ConsumerWorker : IConsumerWorker
             async () =>
             {
                 IMessageContext currentContext = null;
+                _logHandler.Info($"KafkaFlow consumer worker {Id} starting", null);
 
                 try
                 {
-                    while (await _messagesBuffer.Reader.WaitToReadAsync(StopCancellationToken))
+                    while (await WaitToReadAsync())
                     {
                         while (_messagesBuffer.Reader.TryRead(out var context))
                         {
+                            _logHandler.Info($"KafkaFlow consumer worker {Id} starting message", context.ConsumerContext.TopicPartitionOffset);
                             StopCancellationToken.ThrowIfCancellationRequested();
                             currentContext = context;
 
                             await this
                                 .ProcessMessageAsync(context, stopCancellationToken)
                                 .WithCancellation(stopCancellationToken, true);
+
+                            _logHandler.Info($"KafkaFlow consumer worker {Id} completed message", context.ConsumerContext.TopicPartitionOffset);
                         }
                     }
                 }
                 catch (OperationCanceledException)
                 {
+                    _logHandler.Info($"KafkaFlow consumer worker {Id} cancelled", null);
                     currentContext?.ConsumerContext.Discard();
                     await this.DiscardBufferedContextsAsync();
                 }
@@ -97,10 +102,18 @@ internal class ConsumerWorker : IConsumerWorker
                 {
                     _logHandler.Error("KafkaFlow consumer worker fatal error", ex, null);
                 }
+
+                _logHandler.Info($"KafkaFlow consumer worker {Id} stopped", null);
             },
             CancellationToken.None);
 
         return Task.CompletedTask;
+    }
+
+    private async Task<bool> WaitToReadAsync()
+    {
+        _logHandler.Info($"KafkaFlow consumer worker {Id} waiting to read messages", null);
+        return await _messagesBuffer.Reader.WaitToReadAsync(StopCancellationToken);
     }
 
     public async Task StopAsync()
