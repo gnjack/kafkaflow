@@ -41,12 +41,6 @@ internal class ConsumerManager : IConsumerManager
     {
         this.Feeder.Start();
 
-        _evaluateWorkersCountTimer = new Timer(
-            state => _ = this.EvaluateWorkersCountAsync(),
-            null,
-            this.Consumer.Configuration.WorkersCountEvaluationInterval,
-            this.Consumer.Configuration.WorkersCountEvaluationInterval);
-
         return Task.CompletedTask;
     }
 
