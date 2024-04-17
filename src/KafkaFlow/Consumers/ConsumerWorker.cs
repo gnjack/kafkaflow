@@ -75,13 +75,16 @@ internal class ConsumerWorker : IConsumerWorker
 
                 try
                 {
-                    await foreach (var context in _messagesBuffer.Reader.ReadAllItemsAsync(stopCancellationToken))
+                    while (await _messagesBuffer.Reader.WaitToReadAsync(stopCancellationToken))
                     {
-                        currentContext = context;
+                        while (_messagesBuffer.Reader.TryRead(out var context))
+                        {
+                            currentContext = context;
 
-                        await this
-                            .ProcessMessageAsync(context, stopCancellationToken)
-                            .WithCancellation(stopCancellationToken, true);
+                            await this
+                                .ProcessMessageAsync(context, stopCancellationToken)
+                                .WithCancellation(stopCancellationToken, true);
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -118,9 +121,12 @@ internal class ConsumerWorker : IConsumerWorker
 
     private async Task DiscardBufferedContextsAsync()
     {
-        await foreach (var context in _messagesBuffer.Reader.ReadAllItemsAsync(CancellationToken.None))
+        while (await _messagesBuffer.Reader.WaitToReadAsync(CancellationToken.None))
         {
-            context.ConsumerContext.Discard();
+            while (_messagesBuffer.Reader.TryRead(out var context))
+            {
+                context.ConsumerContext.Discard();
+            }
         }
     }
 
