@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace KafkaFlow.Extensions;
 
@@ -11,7 +12,7 @@ internal static class ChannelExtensions
         this ChannelReader<T> reader,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        while (await reader.WaitToReadAsync(cancellationToken))
+        while (await WaitToReadAsync(reader, cancellationToken))
         {
             while (reader.TryRead(out var item))
             {
@@ -19,5 +20,11 @@ internal static class ChannelExtensions
                 yield return item;
             }
         }
+    }
+
+    private static async Task<bool> WaitToReadAsync<T>(ChannelReader<T> reader, CancellationToken cancellationToken)
+    {
+        await Task.Delay(10, cancellationToken);
+        return await reader.WaitToReadAsync(cancellationToken);
     }
 }
