@@ -44,7 +44,7 @@ internal class KafkaBus : IKafkaBus
     {
         var stopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopCancellationToken);
 
-        stopTokenSource.Token.Register(() => this.StopAsync().GetAwaiter().GetResult());
+        stopTokenSource.Token.Register(() => Task.Run(StopAsync, CancellationToken.None).Wait(CancellationToken.None));
 
         foreach (var cluster in _configuration.Clusters)
         {

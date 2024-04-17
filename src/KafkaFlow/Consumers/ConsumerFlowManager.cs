@@ -96,8 +96,11 @@ internal class ConsumerFlowManager : IConsumerFlowManager
 
     public void Stop()
     {
-        _pausedPartitions.Clear();
-        this.StopHeartbeat();
+        lock (_pausedPartitions)
+        {
+            _pausedPartitions.Clear();
+            this.StopHeartbeat();
+        }
     }
 
     private void StartHeartbeat()
@@ -143,7 +146,14 @@ internal class ConsumerFlowManager : IConsumerFlowManager
     private void StopHeartbeat()
     {
         _heartbeatTokenSource?.Cancel();
-        _heartbeatTask?.GetAwaiter().GetResult();
-        _heartbeatTask?.Dispose();
+
+        if (_heartbeatTask != null)
+        {
+            Task.Run(async () =>
+            {
+                await _heartbeatTask;
+                _heartbeatTask.Dispose();
+            }).Wait();
+        }
     }
 }
