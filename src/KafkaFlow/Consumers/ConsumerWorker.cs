@@ -75,7 +75,7 @@ internal class ConsumerWorker : IConsumerWorker
 
                 try
                 {
-                    while (await _messagesBuffer.Reader.WaitToReadAsync(stopCancellationToken))
+                    while (await WaitToReadAsync())
                     {
                         while (_messagesBuffer.Reader.TryRead(out var context))
                         {
@@ -100,6 +100,12 @@ internal class ConsumerWorker : IConsumerWorker
             CancellationToken.None);
 
         return Task.CompletedTask;
+    }
+
+    private async Task<bool> WaitToReadAsync()
+    {
+        await Task.Delay(10, StopCancellationToken);
+        return await _messagesBuffer.Reader.WaitToReadAsync(StopCancellationToken);
     }
 
     public async Task StopAsync()
