@@ -78,7 +78,7 @@ internal class ConsumerWorker : IConsumerWorker
                 {
                     while (await WaitToReadAsync())
                     {
-                        _logHandler.Info($"KafkaFlow consumer worker {Id} message available to read", null);
+                        _logHandler.Info($"KafkaFlow consumer worker {Id} has {_messagesBuffer.Reader.Count} messages available to read", null);
                         while (_messagesBuffer.Reader.TryRead(out var context))
                         {
                             _logHandler.Info($"KafkaFlow consumer worker {Id} starting message", context.ConsumerContext.TopicPartitionOffset);
@@ -113,9 +113,7 @@ internal class ConsumerWorker : IConsumerWorker
 
     private async Task<bool> WaitToReadAsync()
     {
-        _logHandler.Info($"KafkaFlow consumer worker {Id} debug wait before read", null);
-        await Task.Delay(10, StopCancellationToken);
-        _logHandler.Info($"KafkaFlow consumer worker {Id} waiting to read messages", null);
+        _logHandler.Info($"KafkaFlow consumer worker {Id} waiting to read with {_messagesBuffer.Reader.Count} messages", null);
         return await _messagesBuffer.Reader.WaitToReadAsync(StopCancellationToken);
     }
 
