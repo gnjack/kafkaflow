@@ -105,7 +105,7 @@ internal class ConsumerWorker : IConsumerWorker
 
     private async Task<bool> WaitToReadAsync()
     {
-        await Task.Delay(10, StopCancellationToken);
+        await Task.Yield();
         return await _messagesBuffer.Reader.WaitToReadAsync(StopCancellationToken);
     }
 
