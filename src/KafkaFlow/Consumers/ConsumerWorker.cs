@@ -75,12 +75,12 @@ internal class ConsumerWorker : IConsumerWorker
 
                 try
                 {
-                    await foreach (var context in _messagesBuffer.Reader.ReadAllItemsAsync(stopCancellationToken))
+                    while (true)
                     {
-                        currentContext = context;
+                        currentContext = await _messagesBuffer.Reader.ReadAsync(StopCancellationToken);
 
                         await this
-                            .ProcessMessageAsync(context, stopCancellationToken)
+                            .ProcessMessageAsync(currentContext, stopCancellationToken)
                             .WithCancellation(stopCancellationToken, true);
                     }
                 }
@@ -89,6 +89,7 @@ internal class ConsumerWorker : IConsumerWorker
                     currentContext?.ConsumerContext.Discard();
                     await this.DiscardBufferedContextsAsync();
                 }
+                catch (ChannelClosedException) { }
                 catch (Exception ex)
                 {
                     _logHandler.Error("KafkaFlow consumer worker fatal error", ex, null);
@@ -118,10 +119,15 @@ internal class ConsumerWorker : IConsumerWorker
 
     private async Task DiscardBufferedContextsAsync()
     {
-        await foreach (var context in _messagesBuffer.Reader.ReadAllItemsAsync(CancellationToken.None))
+        try
         {
-            context.ConsumerContext.Discard();
+            while (true)
+            {
+                var context = await _messagesBuffer.Reader.ReadAsync(CancellationToken.None);
+                context.ConsumerContext.Discard();
+            }
         }
+        catch (ChannelClosedException) { }
     }
 
     private async Task ProcessMessageAsync(IMessageContext context, CancellationToken cancellationToken)
