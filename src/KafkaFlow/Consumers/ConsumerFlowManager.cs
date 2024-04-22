@@ -151,7 +151,7 @@ internal class ConsumerFlowManager : IConsumerFlowManager
         {
             Task.Run(async () =>
             {
-                await _heartbeatTask;
+                await _heartbeatTask.ConfigureAwait(false);
                 _heartbeatTask.Dispose();
             }).Wait();
         }

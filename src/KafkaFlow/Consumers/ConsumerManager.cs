@@ -49,8 +49,8 @@ internal class ConsumerManager : IConsumerManager
         {
             while (!_stopTokenSource.IsCancellationRequested)
             {
-                await Task.Delay(this.Consumer.Configuration.WorkersCountEvaluationInterval, _stopTokenSource.Token);
-                await this.EvaluateWorkersCountAsync();
+                await Task.Delay(this.Consumer.Configuration.WorkersCountEvaluationInterval, _stopTokenSource.Token).ConfigureAwait(false);
+                await this.EvaluateWorkersCountAsync().ConfigureAwait(false);
             }
         });
 
@@ -70,24 +70,24 @@ internal class ConsumerManager : IConsumerManager
 
     private async Task EvaluateWorkersCountAsync()
     {
-        var newWorkersCount = await this.CalculateWorkersCount(this.Consumer.Assignment);
+        var newWorkersCount = await this.CalculateWorkersCount(this.Consumer.Assignment).ConfigureAwait(false);
 
         if (newWorkersCount == this.WorkerPool.CurrentWorkersCount)
         {
             return;
         }
 
-        await this.ChangeWorkersCountAsync(newWorkersCount);
+        await this.ChangeWorkersCountAsync(newWorkersCount).ConfigureAwait(false);
     }
 
     private async Task ChangeWorkersCountAsync(int workersCount)
     {
         try
         {
-            await this.Feeder.StopAsync();
-            await this.WorkerPool.StopAsync();
+            await this.Feeder.StopAsync().ConfigureAwait(false);
+            await this.WorkerPool.StopAsync().ConfigureAwait(false);
 
-            await this.WorkerPool.StartAsync(this.Consumer.Assignment, workersCount);
+            await this.WorkerPool.StartAsync(this.Consumer.Assignment, workersCount).ConfigureAwait(false);
             this.Feeder.Start();
         }
         catch (Exception e)
@@ -111,9 +111,9 @@ internal class ConsumerManager : IConsumerManager
             "Partitions assigned",
             this.GetConsumerLogInfo(partitions));
 
-        var workersCount = await this.CalculateWorkersCount(partitions);
+        var workersCount = await this.CalculateWorkersCount(partitions).ConfigureAwait(false);
 
-        await this.WorkerPool.StartAsync(partitions, workersCount);
+        await this.WorkerPool.StartAsync(partitions, workersCount).ConfigureAwait(false);
     }
 
     private object GetConsumerLogInfo(IEnumerable<Confluent.Kafka.TopicPartition> partitions) => new
@@ -148,7 +148,7 @@ internal class ConsumerManager : IConsumerManager
                                     .Select(x => x.Partition.Value)
                                     .ToList()))
                         .ToList()),
-                _dependencyResolver);
+                _dependencyResolver).ConfigureAwait(false);
         }
         catch (Exception e)
         {
